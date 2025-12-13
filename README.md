@@ -84,6 +84,13 @@ journalctl --user-unit manager.service -f
 
 5) Variables importantes y notas:
 - `DISPLAY` y `XAUTHORITY`: necesarios para que `scrcpy` abra ventanas en tu X session. Ajusta `:0` y la ruta de `.Xauthority` si usas Wayland o una sesión diferente.
+- Para conocer los valores correctos desde tu sesión gráfica (ejecuta en la terminal de la sesión gráfica):
+```bash
+echo $DISPLAY
+echo $XAUTHORITY
+# Si $XAUTHORITY no está definido normalmente estará en ~/.Xauthority
+ls -la ~/.Xauthority
+```
 - `scrcpy.path` en `application.properties`: debe apuntar a la carpeta donde quieras ejecutar `scrcpy` o donde esté su binario si necesita trabajo desde una carpeta específica.
 - `adb` y permisos USB: crea reglas `udev` para permitir acceso a dispositivos sin sudo (por ejemplo `/etc/udev/rules.d/51-android.rules`) y añade tu usuario al grupo `plugdev`.
 
@@ -91,6 +98,31 @@ journalctl --user-unit manager.service -f
 - Si `scrcpy` no muestra ventana: revisa `DISPLAY`/`XAUTHORITY` y que el servicio corre como el mismo usuario de la sesión gráfica.
 - Si no detecta dispositivos: revisa `adb` (prueba `adb devices` en terminal) y las reglas udev.
 - Si el sistema tiene poca RAM: reduce `-Xmx`, considera 1GB de swap si no hay suficiente memoria.
+
+Errores en la app: cómo depurarlos
+- Si ves una pantalla de error o redirecciones con `;jsessionid=` en la URL: eso ocurre cuando tu navegador no acepta cookies. Los contenedores web pueden entonces reescribir el ID de sesión en la URL usando `;jsessionid=...`. Evita esto activando cookies o usando un navegador que acepte cookies.
+- Si la app devuelve una pantalla de error (500) en vez de mostrar el `flash` de error, revisa los logs del servicio para ver la excepción completa:
+  - Para un servicio user (recomendado):
+    ```bash
+    systemctl --user status manager.service
+    journalctl --user-unit manager.service -f
+    ```
+  - Para un servicio system-wide (si lo ejecutaste así como root):
+    ```bash
+    sudo systemctl status manager.service
+    sudo journalctl -u manager.service -f
+    ```
+  - Si no ves stacktraces en la página de error pero quieres verlos en la plantilla en entorno local, añade al `application.properties`:
+    ```properties
+    # Muestra stacktraces en la página de error (solo para depuración local)
+    server.error.include-stacktrace=always
+    ```
+  - Otra opción para ver más logging: ajustar el `logging.level` a `DEBUG` en `application.properties` o exportar `JAVA_OPTS=-Dlogging.level.mobile.personal.manager=DEBUG`.
+
+  Logs de scrcpy y diagnóstico en la UI
+  - He añadido una funcionalidad para ver los logs recientes de `scrcpy` por dispositivo directamente en la UI: pulsa `Logs` en la tarjeta del dispositivo y verás un modal con las últimas líneas capturadas (útil cuando `scrcpy` falla por permisos, X o falta de binario).
+  - Si `scrcpy` falla al arrancar, la app intentará detectar la salida inicial y mostrar un snippet breve en el `flash` (mensaje de error) al intentar `Conectar`.
+  - También existe un endpoint que devuelve logs en texto plano: `GET /logs/{deviceId}`.
 
 7) Seguridad
 - El servicio corre como tu usuario; si vas a exponer la app a la red, añade autenticación y limita accesos.

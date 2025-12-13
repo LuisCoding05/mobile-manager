@@ -43,26 +43,49 @@ public class HomeController {
 
     @PostMapping("/disconnect/{id}")
     public String disconnect(@PathVariable("id") String id, RedirectAttributes ra) {
-        boolean ok = adbService.stopScrcpyForDevice(id);
-        if (ok) {
-            ra.addFlashAttribute("message", "scrcpy detenido para " + id);
-        } else {
-            ra.addFlashAttribute("error", "No se encontró scrcpy corriendo para " + id);
+        try {
+            boolean ok = adbService.stopScrcpyForDevice(id);
+            if (ok) {
+                ra.addFlashAttribute("message", "scrcpy detenido para " + id);
+            } else {
+                ra.addFlashAttribute("error", "No se encontró scrcpy corriendo para " + id);
+            }
+        } catch (Exception ex) {
+            log.error("Error stopping scrcpy for {}", id, ex);
+            ra.addFlashAttribute("error", "Error al detener scrcpy: " + ex.getMessage());
         }
         return "redirect:/";
     }
 
     @PostMapping("/connect/{id}")
     public String connect(@PathVariable("id") String id, RedirectAttributes ra) {
-        boolean ok = adbService.startScrcpyForDevice(id);
-        if (ok) {
-            log.info("Started scrcpy for {}", id);
-            ra.addFlashAttribute("message", "scrcpy iniciado para " + id);
-        } else {
-            log.error("Failed to start scrcpy for {}", id);
-            ra.addFlashAttribute("error", "No se pudo iniciar scrcpy para " + id);
+        try {
+            boolean ok = adbService.startScrcpyForDevice(id);
+            if (ok) {
+                log.info("Started scrcpy for {}", id);
+                ra.addFlashAttribute("message", "scrcpy iniciado para " + id);
+            } else {
+                log.error("Failed to start scrcpy for {}", id);
+                java.util.List<String> logs = adbService.getScrcpyLogs(id);
+                String snippet = logs.stream().limit(10).collect(java.util.stream.Collectors.joining("\n"));
+                if (snippet.isEmpty()) snippet = "Sin salida de scrcpy";
+                ra.addFlashAttribute("error", "No se pudo iniciar scrcpy para " + id + ". Salida:\n" + snippet);
+            }
+        } catch (Exception ex) {
+            log.error("Error starting scrcpy for {}", id, ex);
+            ra.addFlashAttribute("error", "Error al iniciar scrcpy: " + ex.getMessage());
         }
         return "redirect:/";
+    }
+
+    @GetMapping(value = "/logs/{id}")
+    public org.springframework.http.ResponseEntity<String> logsForDevice(@PathVariable("id") String id) {
+        java.util.List<String> logs = adbService.getScrcpyLogs(id);
+        if (logs.isEmpty()) {
+            return org.springframework.http.ResponseEntity.ok("No logs available for device " + id);
+        }
+        String result = String.join("\n", logs);
+        return org.springframework.http.ResponseEntity.ok().header("Content-Type", "text/plain; charset=utf-8").body(result);
     }
 
 }
