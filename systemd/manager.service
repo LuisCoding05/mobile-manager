@@ -1,0 +1,16 @@
+[Unit]
+Description=Scrcpy Manager (Spring Boot)
+After=network.target
+
+[Service]
+Environment=JAVA_OPTS=-Xms256m -Xmx512m
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/<tu-usuario>/.Xauthority
+WorkingDirectory=/home/<tu-usuario>/manager
+ExecStart=/usr/bin/java $JAVA_OPTS -jar /home/<tu-usuario>/manager/manager-0.0.1-SNAPSHOT.jar
+Restart=always
+RestartSec=10
+TimeoutStopSec=20
+
+[Install]
+WantedBy=default.target
