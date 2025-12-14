@@ -46,11 +46,11 @@
               <div class="card-body d-flex flex-column">
                 <h5 class="card-title device-id d-flex align-items-center gap-2">
                   <i class="bi bi-phone"></i>
-                  <span th:text="${dev.shortId()}"></span>
+                  <span th:text="${dev.shortId}"></span>
                   <small class="ms-2" th:attr="title=${dev.id}"> <i class="bi bi-info-circle" aria-hidden="true"></i></small>
                 </h5>
                 <p class="card-text device-model" th:text="${dev.description != null ? dev.description : 'Modelo desconocido'}"></p>
-                <p class="card-text">Estado: <span th:classappend="${dev.status=='device'}? 'badge bg-success' : (dev.status=='offline'? 'badge bg-secondary' : (dev.status=='unauthorized'? 'badge bg-warning text-dark' : 'badge bg-light text-dark'))" th:text="${dev.friendlyStatus()}"></span></p>
+                <p class="card-text">Estado: <span th:classappend="${dev.status=='device'}? 'badge bg-success' : (dev.status=='offline'? 'badge bg-secondary' : (dev.status=='unauthorized'? 'badge bg-warning text-dark' : 'badge bg-light text-dark'))" th:text="${dev.friendlyStatus}"></span></p>
                 <div class="mt-auto d-flex gap-2">
                   <form th:if="${activeDeviceIds.contains(dev.id)}" th:action="@{'/disconnect/' + ${dev.id}}" method="post" style="display:inline-block;">
                     <button type="submit" class="btn btn-warning">Desconectar</button>
