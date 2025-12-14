@@ -49,7 +49,50 @@ public class AdbService {
         } catch (IOException e) {
             log.error("Error running adb devices", e);
         }
+        // enrich devices with model/manufacturer/product when possible
+        for (Device d : devices) {
+            if ("device".equals(d.getStatus())) {
+                try {
+                    enrichDeviceInfo(d);
+                } catch (Exception ex) {
+                    log.debug("Could not enrich device {} info", d.getId(), ex);
+                }
+            }
+        }
         return devices;
+    }
+
+    private String runAdbCommand(String... args) throws IOException {
+        List<String> cmd = new ArrayList<>();
+        cmd.add(adbPath);
+        cmd.addAll(java.util.Arrays.asList(args));
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        Process p = pb.start();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            return br.lines().collect(Collectors.joining("\n")).trim();
+        }
+    }
+
+    public void enrichDeviceInfo(Device d) {
+        if (d == null || d.getId() == null) return;
+        try {
+            String id = d.getId();
+            String model = runAdbCommand("-s", id, "shell", "getprop", "ro.product.model");
+            String manufacturer = runAdbCommand("-s", id, "shell", "getprop", "ro.product.manufacturer");
+            String product = runAdbCommand("-s", id, "shell", "getprop", "ro.product.device");
+            if (model != null && !model.isEmpty()) d.setModel(model);
+            if (manufacturer != null && !manufacturer.isEmpty()) d.setManufacturer(manufacturer);
+            if (product != null && !product.isEmpty()) d.setProduct(product);
+            StringBuilder desc = new StringBuilder();
+            if (manufacturer != null && !manufacturer.isEmpty()) desc.append(manufacturer);
+            if (model != null && !model.isEmpty()) {
+                if (desc.length() > 0) desc.append(' ');
+                desc.append(model);
+            }
+            if (desc.length() > 0) d.setDescription(desc.toString());
+        } catch (IOException ex) {
+            log.debug("Error fetching properties for device {}", d.getId(), ex);
+        }
     }
 
     public List<Device> parseDevicesFromOutput(String output) {
@@ -63,7 +106,7 @@ public class AdbService {
             // expected format: <id>\t<status>
             String[] parts = l.split("\t+|\\s+");
             if (parts.length >= 2) {
-                devices.add(new Device(parts[0], parts[1]));
+                devices.add(Device.builder().id(parts[0]).status(parts[1]).build());
             }
         }
         return devices;

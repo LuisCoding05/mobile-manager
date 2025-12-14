@@ -13,6 +13,15 @@ Configuración
   - `adb.path` : ejecutable `adb` (por defecto `adb` en PATH).
   - `scrcpy.path` : carpeta donde ejecutar `scrcpy` (por defecto `/home/adrian/scrcpy`).
 
+  ¿Qué es el `Device ID` que muestra la UI?
+  - El identificador mostrado (abreviado) es el serial que `adb devices` devuelve, algo como `192.168.1.100:5555` o `ZX1G22XXXX`.
+  - Es un identificador único por dispositivo usado por `adb` para referirse al dispositivo. No es un nombre legible por humanos; por eso la UI muestra debajo el `manufacturer` y `model` (si están disponibles) para que sea más fácil identificar el dispositivo.
+
+  Estados de dispositivo en la UI:
+  - `Conectado` (green badge): el dispositivo está online y `adb` lo reporta como `device`.
+  - `Desconectado` (gray badge): el dispositivo aparece `offline`.
+  - `No autorizado` (orange badge): se requiere autorizar la depuración usb en el dispositivo.
+
 Notas de uso
 - Si no hay dispositivos conectados al entrar en `/` verás un mensaje informativo "No hay dispositivos conectados." y podrás pulsar `Refrescar` para reintentar.
 - Si conectas un dispositivo después de abrir la página, pulsa `Refrescar` o activa `Auto-refrescar`.
